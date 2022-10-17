@@ -1,0 +1,18 @@
+host: ":8000"
+pprof_host: ":8090"
+secret: 4gswWEDFswfg4w
+adminsecret: 345FASCDSasd3
+db: postgres://:@localhost:5432/sw?sslmode=disable
+dblog: false
+gonum: 10
+redis:
+  name:
+  host: ":6379"
+  enable: false
+  channel:
+client:
+  compression: true
+  compression_level: 5
+  read_buffer_size: 4096
+  read_message_size_limit: 4096
+  write_buffer_size: 4096
