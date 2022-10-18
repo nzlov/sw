@@ -158,7 +158,7 @@ func (n *Node) Register(client *Client) {
 	mids := []string{}
 	if err := n.db.Model(new(UserMessage)).
 		Where("userid = ? and ack = ?", client.user, false).
-		Order("addtime").
+		Order("created_at").
 		Pluck("messageid", &mids).Error; err != nil {
 		log.Error("db:find offline message id:", err)
 	}
@@ -171,7 +171,7 @@ func (n *Node) Register(client *Client) {
 				end = len(mids)
 			}
 			ids := mids[skip:end]
-			if err := n.db.Where("messageid in (?)", ids).Order("addtime").Find(&ms).Error; err != nil {
+			if err := n.db.Where("messageid in (?)", ids).Order("created_at").Find(&ms).Error; err != nil {
 				log.Error("db:find offline message:", err)
 				break
 			} else {
@@ -372,7 +372,7 @@ func (n *Node) ClientHandler(c *Client, data []byte) {
 	switch m["t"] {
 	case "l":
 		if c.user != "" {
-			c.send <- resp("l", m["i"].(string), C_FAIL, "")
+			c.send <- resp("l", m["i"].(string), C_FAIL, "user is not empty")
 			return
 		}
 
@@ -383,7 +383,7 @@ func (n *Node) ClientHandler(c *Client, data []byte) {
 			return
 		}
 		if !n.auth(c, user, clientid, m["tk"].(string), int64(m["ts"].(float64))) {
-			c.send <- resp("l", m["i"].(string), C_AUTH, "")
+			c.send <- resp("l", m["i"].(string), C_AUTH, "auth error")
 			return
 		}
 		c.user = user
@@ -399,7 +399,7 @@ func (n *Node) ClientHandler(c *Client, data []byte) {
 		return
 	case "a":
 		if c.user == "" {
-			c.send <- resp("a", m["i"].(string), C_AUTH, "")
+			c.send <- resp("a", m["i"].(string), C_AUTH, "auth error")
 			return
 		}
 
@@ -409,14 +409,14 @@ func (n *Node) ClientHandler(c *Client, data []byte) {
 		})
 	case "t":
 		if c.user == "" {
-			c.send <- resp("a", m["i"].(string), C_AUTH, "")
+			c.send <- resp("a", m["i"].(string), C_AUTH, "auth error")
 			return
 		}
 		n.Tager(c, m["d"].(map[string]interface{}))
 		c.send <- resp("a", m["i"].(string), C_OK, "")
 	default:
 		if c.user == "" {
-			c.send <- resp("a", m["i"].(string), C_AUTH, "")
+			c.send <- resp("a", m["i"].(string), C_AUTH, "auth error")
 			return
 		}
 		c.log.Errorf("handler error: unknown type:%v\n", m["t"])
